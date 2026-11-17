@@ -12,7 +12,7 @@ El plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 ```powershell
 py -3.11 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements-dev.txt
-.venv\Scripts\python -m coresync.main
+.venv\Scripts\python main.py
 ```
 
 ## Pruebas
@@ -30,7 +30,7 @@ Get-NetFirewallRule -Name *OpenSSH* | Select Name, Enabled
 
 ## Estado
 - [x] Fase 1: acciones 1–4 (configuración, identificación, conexión/desconexión, carpeta personal)
-- [ ] Fase 2: monitoreo (5–9)
+- [x] Fase 2: monitoreo (5–9)
 - [ ] Fase 3: red, servicios y puerto de práctica (10–15)
 - [ ] Fase 4: archivos, respaldos y ruta revelada (16–23, 25)
 - [ ] Fase 5: historial sincronizado e informe (24)

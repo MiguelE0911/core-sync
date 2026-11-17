@@ -5,11 +5,11 @@ import sys
 
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from . import APP_NAME
-from .app.config import AppConfig, ConfigError
-from .app.session import Session
-from .ui.main_window import MainWindow, app_icon
-from .ui.theme import QSS
+from app import APP_NAME
+from app.config import AppConfig, ConfigError
+from app.session import Session
+from ui.main_window import MainWindow, app_icon
+from ui.theme import QSS
 
 
 def main() -> int:

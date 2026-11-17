@@ -10,8 +10,8 @@ from pathlib import Path
 
 import paramiko
 
-from .backend import ConnectParams, ProgressCallback, RemoteBackend, RemoteError, UnknownHostKey
-from .ps import PSResult, encode_command, wrap
+from remote.backend import ConnectParams, ProgressCallback, RemoteBackend, RemoteError, UnknownHostKey
+from remote.ps import PSResult, encode_command, wrap
 
 
 def to_sftp_path(win_path: str) -> str:

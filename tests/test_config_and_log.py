@@ -1,9 +1,9 @@
 import pytest
 from pydantic import ValidationError
 
-from coresync.app.config import AppConfig, ConnectionConfig, LabConfig, StudentConfig
-from coresync.core.result import OpResult
-from coresync.records.activity import ActivityLog, to_row
+from app.config import AppConfig, ConnectionConfig, LabConfig, StudentConfig
+from core.result import OpResult
+from records.activity import ActivityLog, to_row
 
 
 @pytest.mark.parametrize("addr", ["192.168.1.50", "bosgame", "BOSGAME.local", "fe80::1"])

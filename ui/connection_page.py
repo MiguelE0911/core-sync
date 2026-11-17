@@ -4,18 +4,19 @@ from __future__ import annotations
 from pydantic import ValidationError
 from PySide6.QtWidgets import (
     QCheckBox, QDoubleSpinBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QVBoxLayout, QWidget,
+    QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSpinBox, QVBoxLayout, QWidget,
 )
+from PySide6.QtCore import Qt
 
-from ..app.config import (
+from app.config import (
     AppConfig, ConnectionConfig, LabConfig, StudentConfig, delete_password, load_password, save_password,
 )
-from ..app.session import Session
-from ..core.paths import PathValidationError, personal_root
-from ..core.result import OpResult
-from ..ops import workspace
-from ..remote.backend import UnknownHostKey
-from .workers import run_async
+from app.session import Session
+from core.paths import PathValidationError, personal_root
+from core.result import OpResult
+from ops import workspace
+from remote.backend import UnknownHostKey
+from ui.workers import run_async
 
 
 def format_op(op: OpResult) -> str:
@@ -66,7 +67,7 @@ class ConnectionPage(QWidget):
         g2 = QGroupBox("Parámetros del laboratorio (los entrega el docente)")
         f2 = QFormLayout(g2)
         f2.addRow("Carpeta base", self.base_path)
-        rng = QHBoxLayout(); rng.addWidget(self.range_start); rng.addWidget(QLabel("a")); rng.addWidget(self.range_end)
+        rng = QHBoxLayout(); rng.addWidget(self.range_start); rng.addWidget(QLabel("  a  ")); rng.addWidget(self.range_end); rng.addStretch()
         f2.addRow("Rango TCP autorizado", rng)
         f2.addRow("Servicio de práctica", self.practice_service)
         f2.addRow("Puerto de práctica", self.practice_port)
@@ -79,11 +80,16 @@ class ConnectionPage(QWidget):
         self.student_id = QLineEdit(); self.student_id.setPlaceholderText("p. ej. AMartinez")
         self.root_preview = QLabel(); self.root_preview.setObjectName("muted")
         g3 = QGroupBox("Estudiante")
-        f3 = QFormLayout(g3)
-        f3.addRow("Nombre completo", self.full_name)
-        f3.addRow("Grupo", self.group)
-        f3.addRow("Identificador", self.student_id)
-        f3.addRow("Carpeta personal", self.root_preview)
+        f3 = QGridLayout(g3)
+        f3.setHorizontalSpacing(16); f3.setVerticalSpacing(12)
+        for col, (label, w, stretch) in enumerate([("Nombre completo", self.full_name, 3),
+                                                   ("Grupo", self.group, 1),
+                                                   ("Identificador", self.student_id, 2)]):
+            f3.addWidget(QLabel(label), 0, col * 2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            f3.addWidget(w, 0, col * 2 + 1)
+            f3.setColumnStretch(col * 2 + 1, stretch)
+        f3.addWidget(QLabel("Carpeta personal"), 1, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        f3.addWidget(self.root_preview, 1, 1, 1, 5)
         for w in (self.base_path, self.student_id):
             w.textChanged.connect(self._update_preview)
 
@@ -102,17 +108,34 @@ class ConnectionPage(QWidget):
         buttons.addStretch()
 
         self.console = QPlainTextEdit(); self.console.setObjectName("console"); self.console.setReadOnly(True)
-        self.console.setMinimumHeight(160)
+        self.console.setMinimumHeight(100); self.console.setMaximumHeight(150)
 
-        grid = QGridLayout()
+        for f in (f1, f2):
+            f.setVerticalSpacing(12)
+            f.setHorizontalSpacing(16)
+            f.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+            f.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.root_preview.setWordWrap(True)
+        for spin in (self.port, self.timeout, self.range_start, self.range_end, self.practice_port, self.cpu_interval):
+            spin.setMinimumWidth(110)
+            spin.setMaximumWidth(150)
+
+        form = QWidget()
+        grid = QGridLayout(form)
+        grid.setContentsMargins(0, 0, 6, 0)
+        grid.setHorizontalSpacing(14)
+        grid.setVerticalSpacing(10)
         grid.addWidget(g1, 0, 0)
         grid.addWidget(g2, 0, 1)
         grid.addWidget(g3, 1, 0, 1, 2)
+        scroll = QScrollArea(); scroll.setObjectName("formScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(form)
         root = QVBoxLayout(self)
-        root.addLayout(grid)
+        root.addWidget(scroll, 1)
         root.addLayout(buttons)
         root.addWidget(QLabel("Resultado de las operaciones"))
-        root.addWidget(self.console, 1)
+        root.addWidget(self.console)
 
         self.load_from(session.config)
         session.connection_changed.connect(self._on_connection_changed)

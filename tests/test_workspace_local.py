@@ -1,9 +1,9 @@
 """Acciones 2 y 4 ejecutadas con las plantillas reales contra una carpeta temporal."""
 from pathlib import Path
 
-from coresync.app.config import AppConfig, LabConfig, StudentConfig
-from coresync.app.session import Session
-from coresync.ops import workspace
+from app.config import AppConfig, LabConfig, StudentConfig
+from app.session import Session
+from ops import workspace
 
 
 def make_session(tmp_path, backend) -> Session:

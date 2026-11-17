@@ -1,6 +1,6 @@
 import pytest
 
-from coresync.core.paths import (
+from core.paths import (
     PathValidationError, is_within, join_inside, personal_root, validate_base_path, validate_name,
     validate_student_id,
 )

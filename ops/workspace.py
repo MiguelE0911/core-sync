@@ -1,11 +1,12 @@
 """Acciones 2, 3 y 4: identidad, conexión y carpeta personal."""
 from __future__ import annotations
 
-from ..app.session import RemoteIdentity, Session
-from ..core.result import OpResult, now_local
-from ..records.activity import COLUMNS
-from ..remote.backend import ConnectParams, RemoteError, UnknownHostKey
-from ..remote.ps import ps_str, ps_str_array
+from app.session import RemoteIdentity, Session
+from core.result import OpResult, now_local
+from records.activity import COLUMNS
+from remote.backend import ConnectParams, RemoteError, UnknownHostKey
+from remote.ps import ps_str, ps_str_array
+from ops.common import run_body
 
 SUBFOLDERS = ["Archivos", "Respaldos", "Restaurados", "Evidencias", "Informes", "Temporales"]
 
@@ -102,7 +103,7 @@ $out += [pscustomobject]@{{ ruta = $id; tipo = 'Archivo'; existia = (Test-Path -
 $out
 """
     op = OpResult(4, "Preparar carpeta personal", params={"carpeta": root}, destination=root, command=body.strip())
-    _run(session, op, body)
+    run_body(session, op, body)
     if op.executed and op.data is not None:
         items = op.data if isinstance(op.data, list) else [op.data]
         op.data = items
@@ -141,22 +142,10 @@ $txt = [IO.File]::ReadAllText($p)
     op = OpResult(2, "Identificar al estudiante",
                   params={"nombre": s.full_name, "grupo": s.group, "id": s.student_id, "sesion": session.session_id},
                   destination=root + "\\identificacion.txt", command=body.strip())
-    _run(session, op, body)
+    run_body(session, op, body)
     if op.executed and isinstance(op.data, dict):
         op.verified = bool(op.data.get("contiene_sesion"))
         op.evidence = op.data.get("ruta", "")
         op.message = "identificacion.txt actualizado y verificado." if op.verified else "No se encontró la sesión en el archivo."
     return session.record(op)
 
-
-def _run(session: Session, op: OpResult, body: str, timeout_s: float = 60) -> None:
-    try:
-        res = session.backend.run_ps(body, timeout_s=timeout_s)
-    except RemoteError as e:
-        op.error = str(e) + (f" {e.hint}" if e.hint else "")
-        return
-    if res.ok:
-        op.executed = True
-        op.data = res.data
-    else:
-        op.error = res.error

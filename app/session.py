@@ -7,12 +7,12 @@ import uuid
 
 from PySide6.QtCore import QObject, Signal
 
-from ..core.paths import personal_root
-from ..core.result import OpResult
-from ..records.activity import ActivityLog, to_row
-from ..remote.backend import RemoteBackend
-from ..remote.ssh_backend import SSHBackend
-from .config import AppConfig, app_data_dir
+from core.paths import personal_root
+from core.result import OpResult
+from records.activity import ActivityLog, to_row
+from remote.backend import RemoteBackend
+from remote.ssh_backend import SSHBackend
+from app.config import AppConfig, app_data_dir
 
 
 def new_session_id() -> str:

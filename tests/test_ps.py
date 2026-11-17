@@ -2,7 +2,7 @@ import base64
 
 import pytest
 
-from coresync.remote.ps import PSResult, as_list, encode_command, ps_int, ps_str, wrap
+from remote.ps import PSResult, as_list, encode_command, ps_int, ps_str, wrap
 
 TRICKY = ["simple", "con 'comilla'", "tipográfica ’ ‘", "$(Remove-Item C:\\)", "; Stop-Computer", "`n backtick",
           "ñandú ÁÉÍÓÚ", "C:\\Ruta con espacios\\a b.txt", 'doble "comilla"']

@@ -11,7 +11,7 @@ import json
 import threading
 from pathlib import Path
 
-from ..core.result import OpResult
+from core.result import OpResult
 
 COLUMNS = [
     "op_id", "sesion", "estudiante_id", "estudiante", "equipo", "inicio", "fin", "zona_horaria",

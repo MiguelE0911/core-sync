@@ -12,8 +12,8 @@ import time
 
 import pytest
 
-from coresync.remote.backend import RemoteBackend
-from coresync.remote.ps import PSResult, encode_command, wrap
+from remote.backend import RemoteBackend
+from remote.ps import PSResult, encode_command, wrap
 
 
 class LocalPSBackend(RemoteBackend):

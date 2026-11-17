@@ -11,7 +11,7 @@ El enunciado (`Semestral - App multiuso.md`) pide una app de escritorio para Win
 
 ## Arquitectura (separa interfaz, conexión, operaciones y registro, como exige el enunciado)
 ```
-coresync/
+(raíz del repositorio)
   main.py                    # punto de entrada
   app/config.py              # carga/validación de config (pydantic) + keyring
   app/session.py             # identidad del estudiante, session_id (UUID), estado de conexión
@@ -23,8 +23,8 @@ coresync/
   core/transfer.py           # motor de transferencias: progreso, velocidad, ETA, .part, cancelación
   ops/                       # una función por grupo de acciones; devuelven OpResult
     system.py  network.py  services.py  port_lab.py  files.py  backup.py  cleanup.py  recover.py
-  logging/activity.py        # registro de operaciones (CSV/SQLite local) + cola de pendientes + sincronización
-  logging/report.py          # informe HTML/Markdown
+  records/activity.py        # registro de operaciones (CSV/SQLite local) + cola de pendientes + sincronización
+  records/report.py          # informe HTML/Markdown
   ui/                        # ventanas Qt: dashboard, conexión, monitoreo, red, archivos, historial, acerca de
   ui/workers.py              # QRunnable + señales (nada bloquea el hilo de la UI)
   resources/                 # logo, icono, QSS de paleta, fuentes (con licencias)

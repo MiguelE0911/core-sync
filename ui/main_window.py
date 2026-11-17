@@ -7,14 +7,18 @@ from PySide6.QtCore import QSize, Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
     QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QLabel, QListWidget, QListWidgetItem, QMainWindow,
-    QPushButton, QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
+    QProgressBar, QPushButton, QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 
-from .. import APP_NAME, APP_VERSION
-from ..app.session import Session
-from ..core.result import OpResult
-from .connection_page import ConnectionPage
-from .theme import StatusBadge
+from app import APP_NAME, APP_VERSION
+from app.session import Session
+from core.result import OpResult
+from core.units import gib, pct
+from ops import monitor
+from ui.connection_page import ConnectionPage
+from ui.monitor_page import MonitorPage, hms
+from ui.theme import StatusBadge
+from ui.workers import run_async
 
 RESOURCES = Path(__file__).resolve().parent.parent / "resources"
 
@@ -76,7 +80,20 @@ class DashboardPage(QWidget):
         self.recent.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         g2 = QGroupBox("Operaciones de esta sesión")
         QVBoxLayout(g2).addWidget(self.recent)
-        lay = QVBoxLayout(self); lay.addWidget(self.g); lay.addWidget(g2, 1)
+
+        # Resumen de recursos (acciones 6, 7 y 8; cada consulta queda registrada)
+        self.g_res = QGroupBox("Resumen de recursos")
+        rf = QFormLayout(self.g_res); rf.setVerticalSpacing(10)
+        self.cpu_bar, self.ram_bar, self.disk_bar = (self._bar() for _ in range(3))
+        self.res_when = QLabel("Sin datos. Pulsa 'Actualizar resumen'."); self.res_when.setObjectName("muted")
+        self.res_status = StatusBadge()
+        self.btn_res = QPushButton("Actualizar resumen"); self.btn_res.clicked.connect(self.refresh_resources)
+        rf.addRow("CPU", self.cpu_bar); rf.addRow("RAM", self.ram_bar); rf.addRow("Disco del sistema", self.disk_bar)
+        rf.addRow(self.res_when)
+        row = QHBoxLayout(); row.addWidget(self.btn_res); row.addWidget(self.res_status, 1); rf.addRow(row)
+
+        top = QHBoxLayout(); top.addWidget(self.g, 1); top.addWidget(self.g_res, 1)
+        lay = QVBoxLayout(self); lay.addLayout(top); lay.addWidget(g2, 1)
         session.connection_changed.connect(self.refresh)
         session.operation_recorded.connect(self.add_op)
         self.refresh()
@@ -92,6 +109,47 @@ class DashboardPage(QWidget):
         self.l_user.setText(f"{r.user} ({'administrador' if r.is_admin else 'estándar'})" if r.user else "—")
         self.l_os.setText(r.os_caption or "—")
         self.l_ps.setText(r.ps_version or "—")
+        self.btn_res.setEnabled(self.session.connected)
+        self.btn_res.setToolTip("" if self.session.connected else "Requiere conexión activa con BOSGAME.")
+
+    @staticmethod
+    def _bar() -> QProgressBar:
+        b = QProgressBar(); b.setRange(0, 1000); b.setValue(0); b.setFormat("—")
+        return b
+
+    @staticmethod
+    def _set(bar: QProgressBar, p: float | None, text: str) -> None:
+        bar.setValue(int((p or 0) * 10)); bar.setFormat(text)
+
+    def refresh_resources(self) -> None:
+        self.btn_res.setEnabled(False)
+        self.res_status.set_status("conectando", "Consultando BOSGAME…")
+        run_async(monitor.resource_summary, self.session, on_done=self._show_resources, on_fail=self._res_fail)
+
+    def _res_fail(self, e: Exception) -> None:
+        self.refresh()
+        self.res_status.set_status("error", f"Error: {e}")
+
+    def _show_resources(self, ops: list) -> None:
+        self.refresh()
+        cpu, ram, disk = ops
+        errors = [o.error for o in ops if o.error]
+        if not cpu.error:
+            v = cpu.data.get("porcentaje")
+            self._set(self.cpu_bar, v, f"{v} %" if v is not None else "No disponible")
+        if not ram.error:
+            d = ram.data; p = pct(d["usada"], d["total"])
+            self._set(self.ram_bar, p, f"{p} % · {gib(d['usada'])} de {gib(d['total'])}")
+        if not disk.error and disk.data:
+            sysdrv = next((d for d in disk.data if d.get("unidad", "").upper() == "C:"), disk.data[0])
+            p = pct(sysdrv.get("usado"), sysdrv.get("total"))
+            self._set(self.disk_bar, p, f"{sysdrv['unidad']} {p} % · libre {gib(sysdrv.get('libre'))}")
+        when = hms(cpu.data.get("fin")) if not cpu.error else "?"
+        self.res_when.setText(f"Medido en BOSGAME a las {when}. Detalle en la sección Monitoreo.")
+        if errors:
+            self.res_status.set_status("error", "; ".join(errors))
+        else:
+            self.res_status.set_status("verificado", "Actualizado")
 
     def add_op(self, op: OpResult) -> None:
         self.recent.insertRow(0)
@@ -170,6 +228,7 @@ class MainWindow(QMainWindow):
         pages = [
             ("Panel principal", DashboardPage(session)),
             ("Conexión y estudiante", ConnectionPage(session)),
+            ("Monitoreo", MonitorPage(session)),
             ("Historial e informes", HistoryPage(session)),
             ("Acerca de", AboutPage()),
         ]

@@ -16,7 +16,7 @@ import keyring
 import keyring.errors
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
-from ..core.paths import validate_base_path, validate_student_id
+from core.paths import validate_base_path, validate_student_id
 
 KEYRING_SERVICE = "CoreSync"
 _HOSTNAME_RE = re.compile(r"^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$")

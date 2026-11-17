@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable
 
-from .ps import PSResult
+from remote.ps import PSResult
 
 ProgressCallback = Callable[[int, int], None]  # (bytes_transferidos, bytes_totales)
 
